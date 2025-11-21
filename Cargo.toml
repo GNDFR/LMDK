@@ -1,0 +1,12 @@
+[package]
+name = "lmdk"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "rust_core"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.27.1", features = ["extension-module"] } # 'io' 기능 제거
+fnv = "1.0"

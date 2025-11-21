@@ -1,0 +1,6 @@
+/target
+/venv
+Cargo.lock
+upload.bat
+lmdk/
+!lmdk/__init__.py
