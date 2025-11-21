@@ -19,53 +19,83 @@ badword1이 포함된 문장은 필터링되어야 합니다. # 유해 단어 �
         f.write(data.strip())
     print(f"✅ {filename} 파일 생성 완료.")
 
-def run_file_processor_test():
-    """DataCleanser 클래스의 process_file 기능을 테스트합니다."""
-    print("--- 🚀 File Processor 테스트 시작 ---")
-
+def run_default_filter_test():
+    """기본 필터링 규칙으로 DataCleanser를 테스트합니다."""
+    print("--- 🚀 1. 기본 필터 테스트 ---")
     filename = "test_data.txt"
-
-    # 1. 테스트 파일 준비
     create_test_file(filename)
 
+    # 기본값으로 초기화 (min_length=20, 기본 유해 단어)
     cleaner = DataCleanser()
 
     try:
-        # [핵심 변경 사항]
-        # Python 파일 객체(open(...))가 아니라, '파일 경로(String)'를 Rust에게 직접 넘깁니다.
-        # 이렇게 하면 Rust가 직접 파일을 열어서 처리하므로 속도가 훨씬 빠르고 메모리도 적게 듭니다.
         print(f"🦀 Rust 엔진에게 파일 처리 요청: {filename}")
-
         processed_unique_count = cleaner.process_file(filename)
 
         print(f"\n✅ Rust가 처리한 고유 라인 수: {processed_unique_count}개")
         print(f"✅ Rust 내부 저장소(HashSet) 크기: {cleaner.count}개")
 
-        # [예상 결과 분석]
-        # 1. "이것도 짧아요..." -> 필터 (길이)
-        # 2. "이것은 첫 번째..." -> 통과 (고유 1)
-        # 3. "이 문장은..." -> 통과 (고유 2)
-        # 4. "이것은 첫 번째..." -> 중복 (무시)
-        # 5. "This is a fourth..." -> 통과 (고유 3)
-        # 6. "THIS IS A FOURTH..." -> 중복 (무시)
-        # 7. "짧은 텍스트." -> 필터 (길이)
-        # 8. "badword1..." -> 필터 (유해 단어)
-        # 9. "offensive_term..." -> 필터 (유해 단어)
-
         expected_unique = 3
-
         if cleaner.count == expected_unique:
-             print(f"\n🏆 성공: 최종 추적 개수가 예상치({expected_unique})와 일치합니다.")
+             print(f"🏆 성공: 최종 추적 개수가 예상치({expected_unique})와 일치합니다.")
         else:
-             print(f"\n❌ 실패: 예상 {expected_unique}개, 실제 {cleaner.count}개")
+             print(f"❌ 실패: 예상 {expected_unique}개, 실제 {cleaner.count}개")
 
     except Exception as e:
         print(f"❌ 처리 중 예외 발생: {e}")
     finally:
-        # 테스트 후 파일 삭제 (선택 사항)
+        # 파일은 다음 테스트에서 사용하므로 여기서는 삭제하지 않음
+        pass
+
+def run_custom_filter_test():
+    """커스텀 필터링 규칙으로 DataCleanser를 테스트합니다."""
+    print("\n--- 🚀 2. 커스텀 필터 테스트 ---")
+    filename = "test_data.txt"
+    # 파일이 이미 생성되었다고 가정
+
+    try:
+        # 테스트 2-1: 최소 길이를 32로 늘려서 테스트
+        print("\n[테스트 2-1] 최소 길이를 32로 설정")
+        # "이것은 첫 번째..." 문장 (31자)이 필터링되어야 함
+        cleaner_long = DataCleanser(min_length=32) # 유해 단어는 기본값 사용
+        count_long = cleaner_long.process_file(filename)
+        expected_long = 2
+
+        print(f"✅ 처리된 라인 수: {count_long}개 (예상: {expected_long}개)")
+        if count_long == expected_long:
+            print("👍 성공!")
+        else:
+            print("👎 실패!")
+
+        # 테스트 2-2: 유해 단어 목록을 직접 지정하여 테스트
+        print("\n[테스트 2-2] 커스텀 유해 단어 설정")
+        # 'badword1'을 허용하고, 대신 '대문자'를 유해 단어로 지정
+        cleaner_custom_toxic = DataCleanser(
+            min_length=20, # 길이는 다시 20으로
+            toxic_keywords=["대문자", "offensive_term"]
+        )
+        count_custom_toxic = cleaner_custom_toxic.process_file(filename)
+        # 예상 결과:
+        # 1. "이것은 첫 번째..." -> '대문자' 포함으로 필터링됨 (-1)
+        # 2. "badword1..." -> 'badword1'이 더 이상 유해단어가 아니므로 통과함 (+1)
+        # 결과적으로 기본 테스트와 동일하게 3개가 되어야 함.
+        expected_custom_toxic = 3
+
+        print(f"✅ 처리된 라인 수: {count_custom_toxic}개 (예상: {expected_custom_toxic}개)")
+        if count_custom_toxic == expected_custom_toxic:
+            print("👍 성공!")
+        else:
+            print("👎 실패!")
+
+    except Exception as e:
+        print(f"❌ 처리 중 예외 발생: {e}")
+    finally:
+        # 모든 테스트가 끝나고 파일 정리
         if os.path.exists(filename):
             os.remove(filename)
-            print(f"✅ {filename} 파일 정리 완료.")
+            print(f"\n✅ {filename} 파일 정리 완료.")
+
 
 if __name__ == "__main__":
-    run_file_processor_test()
+    run_default_filter_test()
+    run_custom_filter_test()

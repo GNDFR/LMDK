@@ -10,21 +10,30 @@ use std::io::{BufRead, BufReader}; // 버퍼링된 읽기 도구
 pub struct DataCleanser {
     pub seen_texts: FnvHashSet<String>,
     pub toxic_keywords: FnvHashSet<String>, // 형님이 추가하신 기능 유지!
+    pub min_length: usize,
 }
 
 // 2. DataCleanser 메소드 구현
 #[pymethods]
 impl DataCleanser {
     #[new]
-    fn new() -> Self {
-        let mut toxic_keywords = FnvHashSet::default();
-        toxic_keywords.insert("badword1".to_string());
-        toxic_keywords.insert("badword2".to_string());
-        toxic_keywords.insert("offensive_term".to_string());
+    #[pyo3(signature = (min_length = None, toxic_keywords = None))]
+    fn new(min_length: Option<usize>, toxic_keywords: Option<Vec<String>>) -> Self {
+        let final_keywords: FnvHashSet<String> = toxic_keywords
+            .unwrap_or_else(|| {
+                vec![
+                    "badword1".to_string(),
+                    "badword2".to_string(),
+                    "offensive_term".to_string(),
+                ]
+            })
+            .into_iter()
+            .collect();
 
         DataCleanser {
             seen_texts: FnvHashSet::default(),
-            toxic_keywords,
+            toxic_keywords: final_keywords,
+            min_length: min_length.unwrap_or(20),
         }
     }
 
@@ -40,8 +49,7 @@ impl DataCleanser {
             .to_lowercase();
 
         // 2. 필터링 (Filtering) - 문자 수 기준 (20자 미만)
-        const MIN_LENGTH: usize = 20;
-        if normalized_key.chars().count() < MIN_LENGTH {
+        if normalized_key.chars().count() < self.min_length {
             // eprintln!("Filtered length: {}", normalized_key); // 디버깅 필요시 주석 해제
             return Ok(None);
         }
