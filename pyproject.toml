@@ -10,8 +10,3 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Rust",
 ]
-
-[tool.maturin]
-# This tells maturin that the Python package 'lmdk'
-# should include the Rust bindings from 'lmdk_rust_core'.
-module-name = "lmdk.rust_core"

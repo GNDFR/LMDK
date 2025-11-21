@@ -1,6 +1,6 @@
 # test.py
 import os
-from lmdk import DataCleanser
+from rust_core import DataCleanser
 
 def create_test_file(filename="test_data.txt"):
     """테스트를 위한 데이터 파일을 생성합니다."""

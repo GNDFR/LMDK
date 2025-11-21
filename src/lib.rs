@@ -32,6 +32,9 @@ impl DataCleanser {
     pub fn clean_text(&mut self, text: String) -> PyResult<Option<String>> {
         // 1. 정규화 (Normalization)
         let normalized_key = text
+            .split('#')
+            .next()
+            .unwrap_or("")
             .replace(' ', " ")
             .trim()
             .to_lowercase();
