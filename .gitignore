@@ -4,3 +4,4 @@ Cargo.lock
 upload.bat
 lmdk/
 !lmdk/__init__.py
+__pycache__/
