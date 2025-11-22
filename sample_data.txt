@@ -1,0 +1,10 @@
+이것도 짧아요 # 필터링 대상 (길이 부족)
+  이것은 첫 번째 고유한 문장입니다. 대문자도 섞여 있습니다.
+이 문장은 필터를 통과하고 고유한 것으로 추적되어야 합니다.
+이것은 첫 번째 고유한 문장입니다. 대문자도 섞여 있습니다. # 중복 라인 (첫 번째와 동일)
+This is a fourth unique line that passes the minimum length filter.
+THIS IS A FOURTH UNIQUE LINE THAT PASSES THE MINIMUM LENGTH FILTER. # 중복 라인 (대소문자 무시)
+짧은 텍스트. # 필터링 대상
+badword1이 포함된 문장은 필터링되어야 합니다. # 유해 단어 필터링
+아주 긴 문장이지만 offensive_term이 들어있어서 삭제될 운명입니다. # 유해 단어 필터링
+이 문장에는 custom_bad_word가 들어있습니다.

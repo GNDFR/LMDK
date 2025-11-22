@@ -10,3 +10,10 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Rust",
 ]
+dependencies = [
+    "typer[all]>=0.9,<1.0",
+    "rich>=13.0,<14.0",
+]
+
+[project.scripts]
+lmdk = "lmdk.cli:app"

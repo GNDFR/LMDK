@@ -1,0 +1,2 @@
+custom_bad_word
+대문자
