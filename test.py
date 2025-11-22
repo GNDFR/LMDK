@@ -56,10 +56,10 @@ def run_custom_filter_test():
     try:
         # 테스트 2-1: 최소 길이를 32로 늘려서 테스트
         print("\n[테스트 2-1] 최소 길이를 32로 설정")
-        # "이것은 첫 번째..." 문장 (31자)이 필터링되어야 함
-        cleaner_long = DataCleanser(min_length=32) # 유해 단어는 기본값 사용
+        cleaner_long = DataCleanser(min_length=32)
         count_long = cleaner_long.process_file(filename)
-        expected_long = 2
+        # 33자, 33자, 63자 라인이 통과하므로 예상 결과는 3
+        expected_long = 3
 
         print(f"✅ 처리된 라인 수: {count_long}개 (예상: {expected_long}개)")
         if count_long == expected_long:
@@ -71,14 +71,10 @@ def run_custom_filter_test():
         print("\n[테스트 2-2] 커스텀 유해 단어 설정")
         # 'badword1'을 허용하고, 대신 '대문자'를 유해 단어로 지정
         cleaner_custom_toxic = DataCleanser(
-            min_length=20, # 길이는 다시 20으로
+            min_length=20,
             toxic_keywords=["대문자", "offensive_term"]
         )
         count_custom_toxic = cleaner_custom_toxic.process_file(filename)
-        # 예상 결과:
-        # 1. "이것은 첫 번째..." -> '대문자' 포함으로 필터링됨 (-1)
-        # 2. "badword1..." -> 'badword1'이 더 이상 유해단어가 아니므로 통과함 (+1)
-        # 결과적으로 기본 테스트와 동일하게 3개가 되어야 함.
         expected_custom_toxic = 3
 
         print(f"✅ 처리된 라인 수: {count_custom_toxic}개 (예상: {expected_custom_toxic}개)")
