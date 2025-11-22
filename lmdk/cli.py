@@ -12,10 +12,29 @@ from typing_extensions import Annotated
 
 # rust_core 라이브러리 임포트
 from rust_core import DataCleanser
+import subprocess
+
+try:
+    from rust_core import ModelQuantizer
+    QUANTIZER_AVAILABLE = True
+except ImportError:
+    QUANTIZER_AVAILABLE = False
+
+try:
+    from .train import train_model
+    TRAIN_AVAILABLE = True
+except ImportError:
+    TRAIN_AVAILABLE = False
+
+try:
+    from .eval import evaluate_model
+    EVAL_AVAILABLE = True
+except ImportError:
+    EVAL_AVAILABLE = False
 
 app = typer.Typer(
     name="lmdk",
-    help="🚀 Language Model Development Kit - 데이터 파이프라인부터 모델 학습까지",
+    help="Language Model Development Kit - 데이터 파이프라인부터 모델 학습까지",
     add_completion=False,
 )
 console = Console()
@@ -48,7 +67,7 @@ def prep(
     ] = None,
 ):
     """
-    📝 텍스트 파일을 정제하고 중복을 제거합니다.
+    텍스트 파일을 정제하고 중복을 제거합니다.
     """
     console.print(f"📁 [bold cyan]입력 파일:[/] {filepath}")
 
@@ -100,6 +119,161 @@ def prep(
     except Exception as e:
         console.print(f"❌ [bold red]파일 처리 중 오류 발생:[/] {e}")
         raise typer.Exit(code=1)
+
+
+if TRAIN_AVAILABLE:
+    @app.command()
+    def train(
+        model_name: Annotated[
+            str, typer.Option(help="훈련할 모델 이름 (예: gpt2, distilgpt2)")
+        ] = "gpt2",
+        dataset_name: Annotated[
+            str, typer.Option(help="사용할 데이터셋 이름")
+        ] = "wikitext",
+        dataset_config: Annotated[
+            str, typer.Option(help="데이터셋 설정")
+        ] = "wikitext-2-raw-v1",
+        output_dir: Annotated[
+            str, typer.Option(help="모델 출력 디렉토리")
+        ] = "./output",
+        num_train_epochs: Annotated[
+            int, typer.Option(help="훈련 에폭 수")
+        ] = 1,
+        batch_size: Annotated[
+            int, typer.Option(help="배치 크기")
+        ] = 4,
+        learning_rate: Annotated[
+            float, typer.Option(help="학습률")
+        ] = 5e-5,
+        use_telemetry: Annotated[
+            bool, typer.Option(help="실험 추적 및 메트릭 로깅 활성화")
+        ] = True,
+        use_accelerate: Annotated[
+            bool, typer.Option(help="Accelerate를 사용한 분산 훈련 활성화")
+        ] = False,
+    ):
+        """
+        Hugging Face 모델을 사용하여 텍스트 생성 모델을 훈련합니다.
+        """
+        console.print(f"[bold blue]모델 훈련 시작:[/] {model_name}")
+
+        try:
+            train_model(
+                model_name=model_name,
+                dataset_name=dataset_name,
+                dataset_config=dataset_config,
+                output_dir=output_dir,
+                num_train_epochs=num_train_epochs,
+                per_device_train_batch_size=batch_size,
+                learning_rate=learning_rate,
+                use_telemetry=use_telemetry,
+                use_accelerate=use_accelerate,
+            )
+            console.print("[bold green]훈련 완료![/]")
+        except Exception as e:
+            console.print(f"[bold red]훈련 중 오류 발생:[/] {e}")
+            raise typer.Exit(code=1)
+
+
+if EVAL_AVAILABLE:
+    @app.command()
+    def evaluate(
+        model_path: Annotated[
+            str, typer.Argument(help="평가할 모델 경로")
+        ],
+        tasks: Annotated[
+            str, typer.Option(help="평가할 태스크들 (쉼표로 구분)")
+        ] = "hellaswag,winogrande,piqa",
+        num_fewshot: Annotated[
+            int, typer.Option(help="Few-shot 샘플 수")
+        ] = 0,
+        output_path: Annotated[
+            str, typer.Option(help="결과 저장 경로")
+        ] = "evaluation_results.json",
+    ):
+        """
+        표준 벤치마크로 모델을 평가합니다.
+        """
+        task_list = [t.strip() for t in tasks.split(",")]
+        console.print(f"[bold blue]모델 평가 시작:[/] {model_path}")
+        console.print(f"[bold blue]태스크들:[/] {', '.join(task_list)}")
+
+        try:
+            results = evaluate_model(
+                model_path=model_path,
+                tasks=task_list,
+                num_fewshot=num_fewshot,
+                output_path=output_path,
+            )
+            console.print("[bold green]평가 완료![/]")
+        except Exception as e:
+            console.print(f"[bold red]평가 중 오류 발생:[/] {e}")
+            raise typer.Exit(code=1)
+
+
+@app.command()
+def upload(
+    repository: Annotated[
+        str, typer.Option(help="업로드할 저장소 (testpypi 또는 pypi)")
+    ] = "testpypi",
+):
+    """
+    PyPI에 패키지를 업로드합니다.
+    """
+    console.print(f"[bold blue]PyPI 업로드 시작:[/] {repository}")
+
+    try:
+        # Build the package
+        console.print("[dim]패키지 빌드 중...[/]")
+        subprocess.run(["python", "-m", "maturin", "build"], check=True)
+
+        # Upload to PyPI
+        console.print(f"[dim]{repository}에 업로드 중...[/]")
+        if repository == "testpypi":
+            subprocess.run(["python", "-m", "twine", "upload", "--repository", "testpypi", "target/wheels/*"], check=True)
+        else:
+            subprocess.run(["python", "-m", "twine", "upload", "target/wheels/*"], check=True)
+
+        console.print("[bold green]업로드 완료![/]")
+    except subprocess.CalledProcessError as e:
+        console.print(f"[bold red]업로드 실패:[/] {e}")
+        raise typer.Exit(code=1)
+    except FileNotFoundError:
+        console.print("[bold red]twine이 설치되지 않았습니다. pip install twine을 실행하세요.[/]")
+        raise typer.Exit(code=1)
+
+
+if QUANTIZER_AVAILABLE:
+    @app.command()
+    def quantize(
+        model_path: Annotated[
+            str, typer.Argument(help="양자화할 모델 경로")
+        ],
+        output_path: Annotated[
+            str, typer.Argument(help="출력 경로")
+        ],
+        bits: Annotated[
+            int, typer.Option(help="양자화 비트 수 (4 또는 8)")
+        ] = 8,
+    ):
+        """
+        모델을 양자화합니다 (4-bit 또는 8-bit).
+        """
+        console.print(f"[bold blue]모델 양자화 시작:[/] {model_path} -> {output_path} ({bits}-bit)")
+
+        try:
+            quantizer = ModelQuantizer()
+            if bits == 8:
+                quantizer.quantize_8bit(model_path, output_path)
+            elif bits == 4:
+                quantizer.quantize_4bit(model_path, output_path)
+            else:
+                raise ValueError("bits must be 4 or 8")
+
+            console.print("[bold green]양자화 완료![/]")
+        except Exception as e:
+            console.print(f"[bold red]양자화 중 오류 발생:[/] {e}")
+            raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":

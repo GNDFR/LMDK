@@ -63,8 +63,33 @@ impl DataCleanser {
     }
 }
 
+#[pyclass(name = "ModelQuantizer")]
+struct ModelQuantizer;
+
+#[pymethods]
+impl ModelQuantizer {
+    #[new]
+    fn new() -> PyResult<Self> {
+        Ok(ModelQuantizer)
+    }
+
+    fn quantize_8bit(&self, model_path: &str, output_path: &str) -> PyResult<()> {
+        // Placeholder for 8-bit quantization
+        // In a real implementation, this would load the model and quantize weights
+        println!("Quantizing model from {} to {} (8-bit)", model_path, output_path);
+        Ok(())
+    }
+
+    fn quantize_4bit(&self, model_path: &str, output_path: &str) -> PyResult<()> {
+        // Placeholder for 4-bit quantization
+        println!("Quantizing model from {} to {} (4-bit)", model_path, output_path);
+        Ok(())
+    }
+}
+
 #[pymodule]
 fn rust_core(_py: Python, m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<DataCleanser>()?;
+    m.add_class::<ModelQuantizer>()?;
     Ok(())
 }

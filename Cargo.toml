@@ -8,5 +8,5 @@ name = "rust_core"
 crate-type = ["cdylib"]
 
 [dependencies]
-pyo3 = { version = "0.27.1", features = ["extension-module"] } # 'io' 기능 제거
+pyo3 = { version = "0.27.1", features = ["extension-module"] }
 fnv = "1.0"
