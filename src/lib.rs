@@ -1,6 +1,6 @@
 use pyo3::prelude::*;
 use std::fs::File;
-use std::io::{self, BufRead};
+use std::io::{self, BufRead, Write};
 use std::path::Path;
 use fnv::FnvHashSet;
 
@@ -55,6 +55,17 @@ impl DataCleanser {
             }
         }
         Ok(processed_count)
+    }
+
+    fn save_cleaned_to_file(&self, output_path: &str) -> PyResult<()> {
+        let path = Path::new(output_path);
+        let mut file = File::create(path).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
+
+        for line in &self.seen_lines {
+            writeln!(file, "{}", line).map_err(|e| PyErr::new::<pyo3::exceptions::PyIOError, _>(e.to_string()))?;
+        }
+
+        Ok(())
     }
 
     #[getter]

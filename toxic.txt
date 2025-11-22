@@ -1,2 +1,25 @@
-custom_bad_word
-대문자
+# This file contains a list of keywords used by the 'lmdk prep' command to filter out toxic or unwanted content from text data.
+# Each keyword should be on a new line.
+# This is a basic list and can be customized by the user.
+
+# English Keywords
+hate
+racist
+sexist
+bigot
+nazi
+stupid
+idiot
+dumb
+shit
+fuck
+bitch
+asshole
+cunt
+damn
+hell
+kill
+murder
+attack
+threat
+violence
