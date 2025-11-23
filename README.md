@@ -91,6 +91,7 @@ LMDK uses a hybrid Python-Rust architecture:
 
 ## Requirements
 
+-   **Supported OS**: Windows, Linux
 -   Python 3.9+
 -   Rust 1.70+
 -   PyTorch
