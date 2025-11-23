@@ -3,3 +3,5 @@
 Cargo.lock
 upload.bat
 __pycache__/
+cleaned_output.txt
+rust_output.txt

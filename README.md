@@ -99,21 +99,35 @@ LMDK uses a hybrid Python-Rust architecture:
 
 ## Development
 
-```bash
-# Install dependencies
-pip install -e .
+To set up a development environment, please follow these steps:
 
-# Build Rust extension
-maturin develop
-
-# Run tests
-python test.py
-```
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/your-username/lmdk.git
+    cd lmdk
+    ```
+2.  **Create and activate a virtual environment:**
+    ```bash
+    python -m venv .venv
+    source .venv/bin/activate
+    ```
+3.  **Install dependencies:**
+    ```bash
+    pip install -e .
+    ```
+4.  **Build the Rust extension:**
+    ```bash
+    maturin develop
+    ```
+5.  **Run tests:**
+    ```bash
+    pytest
+    ```
 
 ## License
 
-MIT License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Contributing
 
-Contributions welcome! Please see our development plan in `development_plan.txt` for roadmap and guidelines.
+Contributions are welcome! Please see our [Contributing Guide](CONTRIBUTING.md) for more details.
