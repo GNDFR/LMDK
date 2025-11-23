@@ -10,3 +10,4 @@ crate-type = ["cdylib"]
 [dependencies]
 pyo3 = { version = "0.27.1", features = ["extension-module"] }
 fnv = "1.0"
+aho-corasick = "1.1"

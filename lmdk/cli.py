@@ -16,12 +16,6 @@ from rust_core import DataCleanser
 import subprocess
 
 try:
-    from rust_core import ModelQuantizer
-    QUANTIZER_AVAILABLE = True
-except ImportError:
-    QUANTIZER_AVAILABLE = False
-
-try:
     from .train import train_model
     TRAIN_AVAILABLE = True
 except ImportError:
@@ -38,8 +32,20 @@ app = typer.Typer(
     help="Language Model Development Kit - From data pipeline to model training",
     add_completion=False,
 )
+
 console = Console()
 
+def _run_command(command, description):
+    """Helper function to run a command and handle errors."""
+    console.print(f"[dim]{description}...[/]")
+    try:
+        subprocess.run(command, check=True)
+    except subprocess.CalledProcessError as e:
+        console.print(f"[bold red]Failed to {description.lower()}:[/] {e}")
+        raise typer.Exit(code=1)
+    except FileNotFoundError:
+        console.print(f"[bold red]{command[0]} is not installed. Please install it to continue.[/]")
+        raise typer.Exit(code=1)
 
 @app.command()
 def prep(
@@ -73,9 +79,7 @@ def prep(
         ),
     ] = None,
 ):
-    """
-    Cleans and deduplicates a text file.
-    """
+    """Cleans and deduplicates a text file using the Rust engine."""
     console.print(f"[bold cyan]Input file:[/] {filepath}")
 
     toxic_keywords = None
@@ -91,22 +95,15 @@ def prep(
             raise typer.Exit(code=1)
 
     try:
-        # Initialize DataCleanser
         cleaner = DataCleanser(min_length=min_length, toxic_keywords=toxic_keywords)
-
-        # Process file
-        with console.status(
-            "[bold green]Processing file with Rust engine...", spinner="dots"
-        ):
+        with console.status("[bold green]Processing file with Rust engine...", spinner="dots"):
             cleaner.process_file(filepath)
 
-        # Print results
         table = Table(
             title="Data Cleaning Results", show_header=True, header_style="bold magenta"
         )
         table.add_column("Item", style="dim", width=30)
         table.add_column("Value", justify="right")
-
         table.add_row("Input File", os.path.basename(filepath))
         table.add_row("Configured Min Sentence Length", str(min_length))
         table.add_row(
@@ -117,14 +114,10 @@ def prep(
             "[bold green]Unique Sentences After Processing[/]",
             f"[bold green]{cleaner.count}[/]",
         )
-
         console.print(table)
         
-        # Save file
         if output_file:
-            with console.status(
-                f"[bold yellow]Saving results to {output_file}...", spinner="dots"
-            ):
+            with console.status(f"[bold yellow]Saving results to {output_file}...", spinner="dots"):
                 cleaner.save_cleaned_to_file(output_file)
             console.print(
                 f"[bold green]Task complete![/] {cleaner.count} unique sentences saved to {output_file}."
@@ -137,7 +130,6 @@ def prep(
     except Exception as e:
         console.print(f"❌ [bold red]Error during file processing:[/] {e}")
         raise typer.Exit(code=1)
-
 
 if TRAIN_AVAILABLE:
     @app.command()
@@ -173,9 +165,7 @@ if TRAIN_AVAILABLE:
             bool, typer.Option(help="Enable distributed training with Accelerate")
         ] = False,
     ):
-        """
-        Trains a text generation model using Hugging Face models.
-        """
+        """Trains a text generation model using Hugging Face models."""
         if dataset_name and train_file:
             console.print("❌ [bold red]Error: Cannot specify both dataset_name and train_file.[/]")
             raise typer.Exit(code=1)
@@ -184,12 +174,11 @@ if TRAIN_AVAILABLE:
             raise typer.Exit(code=1)
 
         console.print(f"[bold blue]Starting model training for:[/] {model_name}")
-
         try:
             train_model(
                 model_name=model_name,
-                dataset_name=dataset_name if not train_file else None, # Pass dataset_name only if train_file is not used
-                dataset_config=dataset_config if not train_file else None, # Pass dataset_config only if train_file is not used
+                dataset_name=dataset_name if not train_file else None,
+                dataset_config=dataset_config if not train_file else None,
                 train_file=train_file,
                 output_dir=output_dir,
                 num_train_epochs=num_train_epochs,
@@ -202,7 +191,6 @@ if TRAIN_AVAILABLE:
         except Exception as e:
             console.print(f"[bold red]Error during training:[/] {e}")
             raise typer.Exit(code=1)
-
 
 if EVAL_AVAILABLE:
     @app.command()
@@ -220,15 +208,12 @@ if EVAL_AVAILABLE:
             str, typer.Option(help="Path to save results")
         ] = "evaluation_results.json",
     ):
-        """
-        Evaluates a model against standard benchmarks.
-        """
+        """Evaluates a model against standard benchmarks."""
         task_list = [t.strip() for t in tasks.split(",")]
         console.print(f"[bold blue]Starting model evaluation for:[/] {model_path}")
         console.print(f"[bold blue]Tasks:[/] {', '.join(task_list)}")
-
         try:
-            results = evaluate_model(
+            evaluate_model(
                 model_path=model_path,
                 tasks=task_list,
                 num_fewshot=num_fewshot,
@@ -239,77 +224,27 @@ if EVAL_AVAILABLE:
             console.print(f"[bold red]Error during evaluation:[/] {e}")
             raise typer.Exit(code=1)
 
-
 @app.command()
 def upload(
     repository: Annotated[
         str, typer.Option(help="Repository to upload to (testpypi or pypi)")
     ] = "testpypi",
 ):
-    """
-    Uploads the package to PyPI.
-    """
+    """Builds and uploads the package to PyPI."""
     console.print(f"[bold blue]Starting PyPI upload to:[/] {repository}")
+    _run_command(["python", "-m", "maturin", "build"], "Building package")
 
-    try:
-        # Build the package
-        console.print("[dim]Building package...[/]")
-        subprocess.run(["python", "-m", "maturin", "build"], check=True)
+    upload_command = ["python", "-m", "twine", "upload"]
+    if repository == "testpypi":
+        upload_command.extend(["--repository", "testpypi"])
+    upload_command.append("target/wheels/*")
 
-        # Upload to PyPI
-        console.print(f"[dim]Uploading to {repository}...[/]")
-        if repository == "testpypi":
-            subprocess.run(["python", "-m", "twine", "upload", "--repository", "testpypi", "target/wheels/*"], check=True)
-        else:
-            subprocess.run(["python", "-m", "twine", "upload", "target/wheels/*"], check=True)
+    _run_command(upload_command, f"Uploading to {repository}")
+    console.print("[bold green]Upload complete![/]")
 
-        console.print("[bold green]Upload complete![/]")
-    except subprocess.CalledProcessError as e:
-        console.print(f"[bold red]Upload failed:[/] {e}")
-        raise typer.Exit(code=1)
-    except FileNotFoundError:
-        console.print("[bold red]twine is not installed. Please run `pip install twine`.[/]")
-        raise typer.Exit(code=1)
-
-
-if QUANTIZER_AVAILABLE:
-    @app.command()
-    def quantize(
-        model_path: Annotated[
-            str, typer.Argument(help="Path to the model to quantize")
-        ],
-        output_path: Annotated[
-            str, typer.Argument(help="Output path for the quantized model")
-        ],
-        bits: Annotated[
-            int, typer.Option(help="Number of bits for quantization (4 or 8)")
-        ] = 8,
-    ):
-        """
-        Quantizes a model (4-bit or 8-bit).
-        """
-        console.print(f"[bold blue]Starting model quantization:[/] {model_path} -> {output_path} ({bits}-bit)")
-
-        try:
-            quantizer = ModelQuantizer()
-            if bits == 8:
-                quantizer.quantize_8bit(model_path, output_path)
-            elif bits == 4:
-                quantizer.quantize_4bit(model_path, output_path)
-            else:
-                raise ValueError("bits must be 4 or 8")
-
-            console.print("[bold green]Quantization complete![/]")
-        except Exception as e:
-            console.print(f"[bold red]Error during quantization:[/] {e}")
-            raise typer.Exit(code=1)
-
-
-if __name__ == "__main__":
-
-
+def main():
+    """Main function to run the CLI."""
     app()
 
-
 if __name__ == "__main__":
-    app()
+    main()
