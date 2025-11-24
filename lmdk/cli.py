@@ -139,7 +139,7 @@ if TRAIN_AVAILABLE:
         ] = "gpt2",
         dataset_name: Annotated[
             Optional[str], typer.Option(help="Name of the dataset to use (e.g., wikitext). Cannot be used with --train-file.")
-        ] = "wikitext",
+        ] = None,
         dataset_config: Annotated[
             Optional[str], typer.Option(help="Dataset configuration (e.g., wikitext-2-raw-v1)")
         ] = "wikitext-2-raw-v1",
