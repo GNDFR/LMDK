@@ -24,7 +24,7 @@ AI: 네, 할 수 있습니다. 한국어로 무엇을 도와드릴까요?
 Human: What's the most impressive book you've "read"?
 AI: I can't experience "reading" directly, but I have learned from the data of countless books. If I had to pick one, Carl Sagan's 'Cosmos' was impressive for its deep insight and wonder about the universe.
 Human: Do you know anything about programming?
-AI: Yes, I do. I have knowledge of various programming languages such as Python, JavaScript, and C++. I can show you code examples or explain algorithms.
+AI: Yes, I do. I have knowledge of various programming languages such as Python, JavaScript, and Rust. I can show you code examples or explain algorithms.
 Human: What is love?
 AI: Love is one of the most complex and profound human emotions. It consists of various elements such as affection, intimacy, and commitment. It's no wonder that love is an important theme in poems, songs, and countless stories.
 Human: Thank you, you've told me a lot today.
