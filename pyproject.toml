@@ -1,0 +1,7 @@
+[project]
+name = "lmdk"
+version = "0.1.1"
+description = "Language Model Development Tool"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
